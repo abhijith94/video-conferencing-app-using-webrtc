@@ -1,0 +1,112 @@
+.home {
+  height: 100vh;
+
+  .create-video-chat {
+    height: 100%;
+
+    .create-meeting-container {
+      height: 100%;
+
+      .title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #1565c0;
+      }
+
+      .create-chat-btn {
+        height: fit-content;
+        font-size: 2rem;
+        margin-top: 30px;
+        padding: 10px 40px;
+        background-color: #1565c0;
+
+        &:hover {
+          background-color: #42a5f5;
+        }
+      }
+
+      .meeting-url-copy-container {
+        margin-top: 100px;
+        padding: 30px 0;
+
+        .url {
+          background-color: #eceff1;
+          color: #78909c;
+          font-size: 1.5rem;
+        }
+
+        .url-copy-btn {
+          button {
+            width: 100%;
+            height: 100%;
+            font-size: 1.2rem;
+            background-color: #1565c0;
+
+            &:hover {
+              background-color: #42a5f5;
+            }
+          }
+        }
+        .url-copied {
+          button {
+            width: 100%;
+            height: 100%;
+            font-size: 1.2rem;
+            background-color: #66bb6a;
+            color: white;
+            border: none;
+
+            &:hover {
+              color: white;
+              cursor: default;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .start-video-chat {
+    background-color: #1565c0;
+    height: 100%;
+
+    .join-meeting-container {
+      height: 100%;
+
+      .title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: white;
+      }
+
+      .meeting-url-join-container {
+        padding: 30px 0;
+
+        .url {
+          background-color: #eceff1;
+
+          input {
+            height: 100%;
+            font-size: 1.4rem;
+            color: #78909c;
+          }
+        }
+
+        .join-chat-btn {
+          button {
+            width: 100%;
+            height: 100%;
+            font-size: 1.4rem;
+            background-color: white;
+            color: #1565c0;
+            font-weight: bold;
+            &:hover {
+              background-color: #42a5f5;
+              color: white;
+            }
+          }
+        }
+      }
+    }
+  }
+}
