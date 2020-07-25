@@ -15,7 +15,7 @@ class Chat extends Component {
     chatContainerStyle: {},
   };
 
-  constructor() {
+    constructor() {
     super();
     let socketInstance = new Socket();
     this.socket = socketInstance.socket;
@@ -61,7 +61,7 @@ class Chat extends Component {
       }
     });
   }
-
+  
   userVideoToggle = () => {
     this.setState((prevState) => ({ userVideo: !prevState.userVideo }));
   };
@@ -179,12 +179,33 @@ class Chat extends Component {
         });
 
         let peers = [...this.state.peers];
+
         peers = peers.map((peer) => {
           if (peer.peerId === this.state.localPeerId) {
             peer.stream = stream;
 
-            peer.peerjs.on('call', function (call) {
+            peer.peerjs.on('call', (call) => {
               call.answer(peer.stream);
+
+              let peers = [...this.state.peers];
+              peers.push({
+                peerId: call.peer,
+                name: 'Max2',
+                mute: 0,
+                stream: call.localStream,
+              });
+
+              this.setState(
+                {
+                  peers,
+                  chatContainerStyle: this.generateChatContainerStyles(
+                    peers.length
+                  ),
+                },
+                () => {
+                  this.remoteAudioToggle(call.peer, 0);
+                }
+              );
             });
           }
           return peer;

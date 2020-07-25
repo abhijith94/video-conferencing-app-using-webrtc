@@ -5,12 +5,12 @@ class Socket {
   instance = null;
 
   constructor() {
-    if (this.instance instanceof Socket) {
-      return this.instance;
+    if (Socket.instance instanceof Socket) {
+      return Socket.instance;
     }
 
     this.socket = io(SOCKET_URL);
-    this.instance = this;
+    Socket.instance = this;
   }
 }
 

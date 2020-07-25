@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import { Row, Col, Button, Input } from 'antd';
 import { FETCH_MEET_URL, SERVER_URL } from '../../config';
 import axios from 'axios';
-import Socket from '../../lib/socket';
 import './Home.scss';
 
 class Home extends Component {
@@ -12,11 +11,6 @@ class Home extends Component {
     urlCopied: false,
     showCopyUrlSection: false,
   };
-
-  constructor() {
-    super();
-    this.socket = new Socket().socket;
-  }
 
   createMeetingBtnHandler = async () => {
     try {
