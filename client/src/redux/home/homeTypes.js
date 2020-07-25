@@ -1,6 +1,0 @@
-const TYPES = {
-  CHAT_URL_COPIED: 'CHAT_URL_COPIED',
-  SHOW_COPY_URL_SECTION: 'SHOW_COPY_URL_SECTION',
-};
-
-export default TYPES;

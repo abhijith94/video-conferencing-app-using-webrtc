@@ -1,0 +1,21 @@
+.Peer {
+  background-color: rgb(43, 42, 42);
+  height: 100%;
+  width: 100%;
+  position: relative;
+
+  .user-mute {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+
+    .microphone {
+      background: none;
+      border: none;
+
+      i {
+        color: gainsboro;
+      }
+    }
+  }
+}

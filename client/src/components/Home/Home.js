@@ -1,22 +1,24 @@
 import React, { Component } from 'react';
 import { Row, Col, Button, Input } from 'antd';
-import { connect } from 'react-redux';
-import {
-  showCopyUrlSection_,
-  copyUrlClicked,
-} from '../../redux/home/homeActions';
-import axios from 'axios';
 import { FETCH_MEET_URL, SERVER_URL } from '../../config';
+import axios from 'axios';
 import './Home.scss';
 
 class Home extends Component {
+  state = {
+    joinUrl: '',
+    meetUrl: '',
+    urlCopied: false,
+    showCopyUrlSection: false,
+  };
+
   createMeetingBtnHandler = async () => {
-    const { showCopyUrlSection_ } = this.props;
     try {
       let data = await axios.get(FETCH_MEET_URL);
       if (data && data.data && data.data.data) {
-        showCopyUrlSection_({
+        this.setState({
           meetUrl: SERVER_URL + '/' + data.data.data,
+          showCopyUrlSection: true,
         });
       }
     } catch (error) {
@@ -24,20 +26,27 @@ class Home extends Component {
     }
   };
 
-  copyUrlClickedHandler = () => {
-    const { copyUrlClicked, meetUrl } = this.props;
-    navigator.clipboard.writeText(meetUrl).then(
-      function () {
-        copyUrlClicked();
-      },
-      function (err) {
-        console.error(err);
-      }
-    );
+  copyUrlClickedHandler = async () => {
+    try {
+      await navigator.clipboard.writeText(this.state.meetUrl);
+      this.setState({
+        urlCopied: true,
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  joinMeetingHandler = () => {
+    this.props.history.push(this.state.joinUrl);
+  };
+
+  joinUrlChangedHandler = (e) => {
+    this.setState({ joinUrl: e.target.value });
   };
 
   render() {
-    const { urlCopied, showCopyUrlSection, meetUrl } = this.props;
+    const { urlCopied, showCopyUrlSection, meetUrl } = this.state;
 
     return (
       <Row className="home">
@@ -88,10 +97,17 @@ class Home extends Component {
               </div>
               <Row justify="center" className="meeting-url-join-container">
                 <Col span={10} className="url">
-                  <Input type="text" placeholder="paste url here..." />
+                  <Input
+                    type="text"
+                    placeholder="paste url here..."
+                    value={this.state.joinUrl}
+                    onChange={this.joinUrlChangedHandler}
+                  />
                 </Col>
                 <Col span={4} className="join-chat-btn">
-                  <Button type="primary">Join</Button>
+                  <Button type="primary" onClick={this.joinMeetingHandler}>
+                    Join
+                  </Button>
                 </Col>
               </Row>
             </Col>
@@ -102,15 +118,4 @@ class Home extends Component {
   }
 }
 
-const mapStateToProps = (state) => ({
-  meetUrl: state.home.meetUrl,
-  urlCopied: state.home.urlCopied,
-  showCopyUrlSection: state.home.showCopyUrlSection,
-});
-
-const mapDispatchToProps = (dispatch) => ({
-  showCopyUrlSection_: (data) => dispatch(showCopyUrlSection_(data)),
-  copyUrlClicked: () => dispatch(copyUrlClicked()),
-});
-
-export default connect(mapStateToProps, mapDispatchToProps)(Home);
+export default Home;
