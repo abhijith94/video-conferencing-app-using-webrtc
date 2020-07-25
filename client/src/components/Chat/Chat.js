@@ -1,6 +1,9 @@
 import React, { Component } from 'react';
 import { Row, Col, Button } from 'antd';
 import ChatWindow from '../ChatWindow/ChatWindow';
+import Socket from '../../lib/socket';
+import Peer from 'peerjs';
+
 import './Chat.scss';
 
 class Chat extends Component {
@@ -8,20 +11,56 @@ class Chat extends Component {
     userVideo: 1,
     userAudio: 1,
     localPeerId: 123,
-    peers: [
-      {
-        peerId: 123,
-        name: 'Sam',
-        mute: 0,
-      },
-      {
-        peerId: 265,
-        name: 'Max',
-        mute: 0,
-      },
-    ],
+    peers: [],
     chatContainerStyle: {},
   };
+
+  constructor() {
+    super();
+    let socketInstance = new Socket();
+    this.socket = socketInstance.socket;
+
+    this.socket.on('newPeer', ({ peerId }) => {
+      console.log('newPeer');
+
+      let peerjs = null;
+      let localStream = null;
+      this.state.peers.forEach((peer) => {
+        if (peer.peerId === this.state.localPeerId) {
+          peerjs = peer.peerjs;
+          localStream = peer.stream;
+        }
+      });
+
+      if (peerjs && localStream) {
+        var call = peerjs.call(peerId, localStream); //call the remote peer
+
+        //when remote peer sends back the stream
+        call.on('stream', async (stream) => {
+          let peers = [...this.state.peers];
+
+          peers.push({
+            peerId: peerId,
+            name: 'Max2',
+            mute: 0,
+            stream,
+          });
+
+          this.setState(
+            {
+              peers,
+              chatContainerStyle: this.generateChatContainerStyles(
+                peers.length
+              ),
+            },
+            () => {
+              this.remoteAudioToggle(peerId, 0); //add due bug where remote stream is not visible unless state updated again
+            }
+          );
+        });
+      }
+    });
+  }
 
   userVideoToggle = () => {
     this.setState((prevState) => ({ userVideo: !prevState.userVideo }));
@@ -31,28 +70,37 @@ class Chat extends Component {
     this.setState((prevState) => ({ userAudio: !prevState.userAudio }));
   };
 
-  remoteAudioToggle = (peerId) => {
+  remoteAudioToggle = (peerId, status = null) => {
     let peers = [...this.state.peers];
     peers = peers.map((peer) => {
       if (peer.peerId === peerId) {
-        peer.mute = !peer.mute;
+        peer.mute = status === null ? !peer.mute : status;
       }
       return peer;
     });
     this.setState({ peers });
   };
 
-  generateChatContainerStyles() {
+  generateChatContainerStyles(size = null) {
     let style = {};
 
-    switch (this.state.peers.length) {
+    switch (size || this.state.peers.length) {
+      case 0:
+        style = {
+          gridTemplateColumns: '1fr',
+          gridAutoRows: '70%',
+          alignContent: 'center',
+          justifyItems: 'center',
+          padding: '0 30%',
+        };
+        break;
       case 1:
         style = {
           gridTemplateColumns: '1fr',
-          gridAutoRows: '60%',
+          gridAutoRows: '70%',
           alignContent: 'center',
           justifyItems: 'center',
-          padding: '0 25%',
+          padding: '0 30%',
         };
         break;
       case 2:
@@ -115,15 +163,83 @@ class Chat extends Component {
         break;
     }
 
-    this.setState({ chatContainerStyle: style });
+    return style;
   }
 
   endCallHandler = () => {
     this.props.history.push('/');
   };
 
-  componentDidMount() {
-    this.generateChatContainerStyles();
+  setupLocalUserStream = async () => {
+    if (navigator.mediaDevices.getUserMedia) {
+      try {
+        let stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          //audio: true,
+        });
+
+        let peers = [...this.state.peers];
+        peers = peers.map((peer) => {
+          if (peer.peerId === this.state.localPeerId) {
+            peer.stream = stream;
+
+            peer.peerjs.on('call', function (call) {
+              call.answer(peer.stream);
+            });
+          }
+          return peer;
+        });
+
+        await this.setState({ peers });
+
+        this.socket.emit('peerjsInitialized', {
+          peerId: this.state.localPeerId,
+          roomId: this.props.match.params[0],
+        });
+      } catch (error) {
+        console.log('Something went wrong!', error);
+      }
+    }
+  };
+
+  async componentDidMount() {
+    let generateChatContainerStyles = this.generateChatContainerStyles.bind(
+      this
+    );
+    let setupLocalUserStream = this.setupLocalUserStream.bind(this);
+    let setState = this.setState.bind(this);
+
+    this.socket.on('connect', async () => {
+      let style = generateChatContainerStyles();
+      const peerjs = new Peer(this.socket.id, {
+        host: 'peerjs.92k.de',
+        secure: true,
+      });
+
+      peerjs.on('open', function (id) {
+        console.log('My peer ID is: ' + id);
+      });
+
+      peerjs.on('error', function (err) {
+        console.log('Error: ', err);
+      });
+
+      await setState({
+        localPeerId: this.socket.id,
+        peers: [
+          {
+            peerId: this.socket.id,
+            name: 'Max',
+            mute: 0,
+            stream: null,
+            peerjs,
+          },
+        ],
+        chatContainerStyle: style,
+      });
+
+      setupLocalUserStream();
+    });
   }
 
   render() {

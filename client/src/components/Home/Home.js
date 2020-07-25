@@ -2,15 +2,21 @@ import React, { Component } from 'react';
 import { Row, Col, Button, Input } from 'antd';
 import { FETCH_MEET_URL, SERVER_URL } from '../../config';
 import axios from 'axios';
+import Socket from '../../lib/socket';
 import './Home.scss';
 
 class Home extends Component {
   state = {
-    joinUrl: '',
-    meetUrl: '',
+    joinUrl: '', //right side
+    meetUrl: '', //left side
     urlCopied: false,
     showCopyUrlSection: false,
   };
+
+  constructor() {
+    super();
+    this.socket = new Socket().socket;
+  }
 
   createMeetingBtnHandler = async () => {
     try {
@@ -38,7 +44,7 @@ class Home extends Component {
   };
 
   joinMeetingHandler = () => {
-    this.props.history.push(this.state.joinUrl);
+    this.props.history.push(this.state.joinUrl.split('/')[3]);
   };
 
   joinUrlChangedHandler = (e) => {
