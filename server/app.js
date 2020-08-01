@@ -9,7 +9,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cors());
 
 shortid.characters(
-  '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$!'
+  '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ()'
 );
 
 app.get('/createRoom', (req, res) => {
@@ -17,6 +17,6 @@ app.get('/createRoom', (req, res) => {
 });
 
 app.listen(3001, () => {
-  console.log('server is running on port 3000');
+  console.log('server is running on port 3001');
   require('./socket');
 });

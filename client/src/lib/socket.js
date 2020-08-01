@@ -12,6 +12,10 @@ class Socket {
     this.socket = io(SOCKET_URL);
     Socket.instance = this;
   }
+
+  destroy() {
+    Socket.instance = null;
+  }
 }
 
 export default Socket;

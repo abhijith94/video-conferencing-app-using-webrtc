@@ -9,7 +9,7 @@
     position: absolute;
     bottom: 10px;
     left: 10px;
-    z-index: 100000;
+    z-index: 1000;
 
     .microphone {
       background: none;
@@ -26,5 +26,23 @@
     height: 100%;
 
     object-fit: cover;
+  }
+
+  .video-disabled {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    background-color: #353535;
+
+    i {
+      font-size: 3rem;
+      color: gainsboro;
+    }
   }
 }

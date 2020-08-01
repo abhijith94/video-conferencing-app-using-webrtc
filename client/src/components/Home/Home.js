@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Row, Col, Button, Input } from 'antd';
-import { FETCH_MEET_URL, SERVER_URL } from '../../config';
+import { FETCH_MEET_URL, MEET_BASE_URL } from '../../config';
 import axios from 'axios';
 import './Home.scss';
 
@@ -17,8 +17,9 @@ class Home extends Component {
       let data = await axios.get(FETCH_MEET_URL);
       if (data && data.data && data.data.data) {
         this.setState({
-          meetUrl: SERVER_URL + '/' + data.data.data,
+          meetUrl: MEET_BASE_URL + '/' + data.data.data,
           showCopyUrlSection: true,
+          urlCopied: false,
         });
       }
     } catch (error) {
@@ -67,9 +68,7 @@ class Home extends Component {
 
               {showCopyUrlSection ? (
                 <Row justify="center" className="meeting-url-copy-container">
-                  <Col span={10} className="url">
-                    {meetUrl}
-                  </Col>
+                  <Col className="url">{meetUrl}</Col>
                   {urlCopied ? (
                     <Col span={4} className="url-copied">
                       <Button type="primary">Copied</Button>

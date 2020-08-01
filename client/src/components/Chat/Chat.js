@@ -8,15 +8,16 @@ import './Chat.scss';
 
 class Chat extends Component {
   state = {
-    userVideo: 1,
-    userAudio: 1,
-    localPeerId: 123,
     peers: [],
+    userAudioMute: false,
+    userVideo: true,
+    localPeerId: null,
     chatContainerStyle: {},
   };
 
-    constructor() {
+  constructor() {
     super();
+
     let socketInstance = new Socket();
     this.socket = socketInstance.socket;
 
@@ -40,9 +41,9 @@ class Chat extends Component {
           let peers = [...this.state.peers];
 
           peers.push({
-            peerId: peerId,
-            name: 'Max2',
-            mute: 0,
+            peerId,
+            mute: false,
+            video: true,
             stream,
           });
 
@@ -58,16 +59,65 @@ class Chat extends Component {
             }
           );
         });
+
+        call.on('close', () => {
+          console.log('closed');
+
+          let peers = this.state.peers.filter(
+            (peer) => peer.peerId !== call.peer
+          );
+
+          this.setState({
+            peers,
+            chatContainerStyle: this.generateChatContainerStyles(peers.length),
+          });
+        });
       }
     });
   }
-  
+
   userVideoToggle = () => {
-    this.setState((prevState) => ({ userVideo: !prevState.userVideo }));
+    this.setState((prevState) => {
+      let peers = [];
+
+      peers = prevState.peers.map((peer) => {
+        if (peer.peerId === this.state.localPeerId) {
+          if (peer.stream) {
+            if (prevState.userVideo) {
+              peer.stream.getTracks().forEach((track) => {
+                track.enabled = false;
+              });
+            } else {
+              peer.stream.getTracks().forEach((track) => {
+                track.enabled = true;
+              });
+            }
+            peer.video = !prevState.userVideo;
+          }
+        }
+        return peer;
+      });
+
+      return { userVideo: !prevState.userVideo, peers };
+    });
   };
 
-  userAudioToggle = () => {
-    this.setState((prevState) => ({ userAudio: !prevState.userAudio }));
+  userAudioMuteToggle = () => {
+    this.setState((prevState) => {
+      let peers = [];
+
+      peers = prevState.peers.map((peer) => {
+        if (peer.peerId === this.state.localPeerId) {
+          if (peer.stream) {
+            peer.stream.muted = !prevState.userAudioMute;
+          }
+          peer.mute = !prevState.userAudioMute;
+        }
+        return peer;
+      });
+
+      return { userAudioMute: !prevState.userAudioMute, peers };
+    });
   };
 
   remoteAudioToggle = (peerId, status = null) => {
@@ -167,6 +217,21 @@ class Chat extends Component {
   }
 
   endCallHandler = () => {
+    this.state.peers.forEach(async (peer) => {
+      if (peer.peerId === this.state.localPeerId) {
+        peer.peerjs.destroy();
+
+        if (peer.stream) {
+          peer.stream.getTracks().forEach((track) => {
+            track.stop();
+          });
+        }
+
+        let socketInstance = new Socket();
+        socketInstance.destroy();
+        this.socket.disconnect();
+      }
+    });
     this.props.history.push('/');
   };
 
@@ -178,44 +243,47 @@ class Chat extends Component {
           //audio: true,
         });
 
-        let peers = [...this.state.peers];
+        const peerjs = new Peer();
 
-        peers = peers.map((peer) => {
-          if (peer.peerId === this.state.localPeerId) {
-            peer.stream = stream;
+        peerjs.on('open', (id) => {
+          let peer = {
+            peerId: id,
+            mute: false,
+            video: true,
+            stream,
+            peerjs,
+          };
 
-            peer.peerjs.on('call', (call) => {
-              call.answer(peer.stream);
+          peer.peerjs.on('call', (call) => {
+            call.answer(peer.stream);
 
-              let peers = [...this.state.peers];
-              peers.push({
-                peerId: call.peer,
-                name: 'Max2',
-                mute: 0,
-                stream: call.localStream,
-              });
+            let peers = [...this.state.peers];
 
-              this.setState(
-                {
-                  peers,
-                  chatContainerStyle: this.generateChatContainerStyles(
-                    peers.length
-                  ),
-                },
-                () => {
-                  this.remoteAudioToggle(call.peer, 0);
-                }
-              );
+            peers.push({
+              peerId: call.peer,
+              mute: false,
+              video: true,
+              stream: call.localStream,
             });
-          }
-          return peer;
+
+            this.setState({
+              peers,
+              chatContainerStyle: this.generateChatContainerStyles(
+                peers.length
+              ),
+            });
+          });
+
+          this.setState({ peers: [peer], localPeerId: id }, () => {
+            this.socket.emit('peerjsInitialized', {
+              peerId: this.state.localPeerId,
+              roomId: this.props.match.params[0],
+            });
+          });
         });
 
-        await this.setState({ peers });
-
-        this.socket.emit('peerjsInitialized', {
-          peerId: this.state.localPeerId,
-          roomId: this.props.match.params[0],
+        peerjs.on('error', function (err) {
+          console.log('Error: ', err);
         });
       } catch (error) {
         console.log('Something went wrong!', error);
@@ -223,48 +291,18 @@ class Chat extends Component {
     }
   };
 
-  async componentDidMount() {
-    let generateChatContainerStyles = this.generateChatContainerStyles.bind(
-      this
-    );
-    let setupLocalUserStream = this.setupLocalUserStream.bind(this);
-    let setState = this.setState.bind(this);
-
+  componentDidMount() {
     this.socket.on('connect', async () => {
-      let style = generateChatContainerStyles();
-      const peerjs = new Peer(this.socket.id, {
-        host: 'peerjs.92k.de',
-        secure: true,
-      });
+      let style = this.generateChatContainerStyles();
 
-      peerjs.on('open', function (id) {
-        console.log('My peer ID is: ' + id);
+      this.setState({ chatContainerStyle: style }, () => {
+        this.setupLocalUserStream();
       });
-
-      peerjs.on('error', function (err) {
-        console.log('Error: ', err);
-      });
-
-      await setState({
-        localPeerId: this.socket.id,
-        peers: [
-          {
-            peerId: this.socket.id,
-            name: 'Max',
-            mute: 0,
-            stream: null,
-            peerjs,
-          },
-        ],
-        chatContainerStyle: style,
-      });
-
-      setupLocalUserStream();
     });
   }
 
   render() {
-    const { userAudio, userVideo, localPeerId } = this.state;
+    const { userAudioMute, userVideo, localPeerId } = this.state;
 
     return (
       <div className="Chat">
@@ -286,24 +324,24 @@ class Chat extends Component {
           <Col span={24} className="user-controls">
             <Row justify="center" align="middle">
               <Col className="user-audio">
-                {userAudio ? (
-                  <Button
-                    type="primary"
-                    shape="circle"
-                    icon={<i className="fas fa-microphone"></i>}
-                    size={'large'}
-                    className="microphone"
-                    onClick={this.userAudioToggle}
-                  ></Button>
-                ) : (
+                {userAudioMute ? (
                   <Button
                     type="primary"
                     shape="circle"
                     icon={<i className="fas fa-microphone-slash"></i>}
                     size={'large'}
                     className="microphone"
-                    onClick={this.userAudioToggle}
+                    onClick={this.userAudioMuteToggle}
                   />
+                ) : (
+                  <Button
+                    type="primary"
+                    shape="circle"
+                    icon={<i className="fas fa-microphone"></i>}
+                    size={'large'}
+                    className="microphone"
+                    onClick={this.userAudioMuteToggle}
+                  ></Button>
                 )}
               </Col>
               <Col className="user-hang-up">

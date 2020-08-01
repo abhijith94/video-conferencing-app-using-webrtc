@@ -8,6 +8,10 @@ class ChatWindow extends Component {
     this.videoRef = React.createRef();
   }
 
+  componentDidMount() {
+    this.videoRef.current.srcObject = this.props.stream;
+  }
+
   componentDidUpdate() {
     this.videoRef.current.srcObject = this.props.stream;
   }
@@ -47,6 +51,34 @@ class ChatWindow extends Component {
                 onClick={() => this.props.remoteAudioToggle(this.props.peerId)}
               />
             )}
+          </div>
+        ) : null}
+
+        {this.props.localPeerId === this.props.peerId ? (
+          <div className="user-mute">
+            {!this.props.mute ? (
+              <Button
+                shape="circle"
+                icon={<i className="fas fa-microphone"></i>}
+                size={'large'}
+                className="microphone"
+                style={{ pointerEvents: 'none' }}
+              ></Button>
+            ) : (
+              <Button
+                shape="circle"
+                icon={<i className="fas fa-microphone-slash"></i>}
+                size={'large'}
+                className="microphone"
+                style={{ pointerEvents: 'none' }}
+              />
+            )}
+          </div>
+        ) : null}
+
+        {!this.props.video ? (
+          <div className="video-disabled">
+            <i className="fas fa-video-slash"></i>
           </div>
         ) : null}
       </div>
