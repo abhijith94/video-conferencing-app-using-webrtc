@@ -22,9 +22,7 @@ class Home extends Component {
           urlCopied: false,
         });
       }
-    } catch (error) {
-      console.log(error);
-    }
+    } catch (error) {}
   };
 
   copyUrlClickedHandler = async () => {
@@ -79,6 +77,7 @@ class Home extends Component {
                         type="primary"
                         onClick={this.copyUrlClickedHandler}
                       >
+                        <i className="far fa-clone"></i>
                         Copy
                       </Button>
                     </Col>

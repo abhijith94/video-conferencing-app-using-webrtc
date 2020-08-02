@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Row, Col, Button } from 'antd';
+import { Row, Col, Button, Spin, message } from 'antd';
 import ChatWindow from '../ChatWindow/ChatWindow';
 import Socket from '../../lib/socket';
 import Peer from 'peerjs';
@@ -13,6 +13,7 @@ class Chat extends Component {
     userVideo: true,
     localPeerId: null,
     chatContainerStyle: {},
+    initializing: true,
   };
 
   constructor() {
@@ -21,9 +22,7 @@ class Chat extends Component {
     let socketInstance = new Socket();
     this.socket = socketInstance.socket;
 
-    this.socket.on('newPeer', ({ peerId }) => {
-      console.log('newPeer');
-
+    this.socket.on('new-peer-connected', ({ peerId }) => {
       let peerjs = null;
       let localStream = null;
       this.state.peers.forEach((peer) => {
@@ -59,20 +58,16 @@ class Chat extends Component {
             }
           );
         });
-
-        call.on('close', () => {
-          console.log('closed');
-
-          let peers = this.state.peers.filter(
-            (peer) => peer.peerId !== call.peer
-          );
-
-          this.setState({
-            peers,
-            chatContainerStyle: this.generateChatContainerStyles(peers.length),
-          });
-        });
       }
+    });
+
+    this.socket.on('peer-disconnected', ({ peerId }) => {
+      let peers = this.state.peers.filter((peer) => peer.peerId !== peerId);
+
+      this.setState({
+        peers,
+        chatContainerStyle: this.generateChatContainerStyles(peers.length),
+      });
     });
   }
 
@@ -257,25 +252,27 @@ class Chat extends Component {
           peer.peerjs.on('call', (call) => {
             call.answer(peer.stream);
 
-            let peers = [...this.state.peers];
+            call.on('stream', (stream) => {
+              let peers = [...this.state.peers];
 
-            peers.push({
-              peerId: call.peer,
-              mute: false,
-              video: true,
-              stream: call.localStream,
-            });
+              peers.push({
+                peerId: call.peer,
+                mute: false,
+                video: true,
+                stream,
+              });
 
-            this.setState({
-              peers,
-              chatContainerStyle: this.generateChatContainerStyles(
-                peers.length
-              ),
+              this.setState({
+                peers,
+                chatContainerStyle: this.generateChatContainerStyles(
+                  peers.length
+                ),
+              });
             });
           });
 
           this.setState({ peers: [peer], localPeerId: id }, () => {
-            this.socket.emit('peerjsInitialized', {
+            this.socket.emit('join-room', {
               peerId: this.state.localPeerId,
               roomId: this.props.match.params[0],
             });
@@ -286,7 +283,9 @@ class Chat extends Component {
           console.log('Error: ', err);
         });
       } catch (error) {
-        console.log('Something went wrong!', error);
+        message.error('Somthing went wrong!');
+      } finally {
+        this.setState({ initializing: false });
       }
     }
   };
@@ -379,6 +378,11 @@ class Chat extends Component {
             </Row>
           </Col>
         </Row>
+        {this.state.initializing ? (
+          <div className="spinner">
+            <Spin size="large" />
+          </div>
+        ) : null}
       </div>
     );
   }

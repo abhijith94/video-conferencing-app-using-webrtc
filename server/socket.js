@@ -1,14 +1,26 @@
 const io = require('socket.io')();
 
 io.on('connection', (socket) => {
-  socket.on('peerjsInitialized', (data) => {
+  let room_id = null;
+  let peer_id = null;
+
+  socket.on('join-room', (data) => {
     if (data && data.peerId && data.roomId) {
-      socket.join(data.roomId, (err) => {
+      room_id = data.roomId;
+      peer_id = data.peerId;
+
+      socket.join(room_id, (err) => {
         if (!err) {
-          socket.to(data.roomId).emit('newPeer', { peerId: data.peerId });
+          socket
+            .to(room_id)
+            .emit('new-peer-connected', { peerId: data.peerId });
         }
       });
     }
+  });
+
+  socket.on('disconnect', () => {
+    io.to(room_id).emit('peer-disconnected', { peerId: peer_id });
   });
 });
 
