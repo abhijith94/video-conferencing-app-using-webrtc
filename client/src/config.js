@@ -6,7 +6,7 @@ export const SERVER_URL =
 export const SOCKET_URL =
   process.env.NODE_ENV === 'development'
     ? 'http://localhost:3002'
-    : 'https://abhijith.xyz/socket';
+    : 'https://abhijith.xyz';
 
 export const FETCH_MEET_URL = SERVER_URL + '/createMeetUrl';
 
