@@ -1,6 +1,6 @@
 const express = require('express');
-const cors = require('cors');
 const shortid = require('shortid');
+const cors = require('cors');
 
 const app = express();
 
@@ -12,7 +12,7 @@ shortid.characters(
   '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ()'
 );
 
-app.get('/createRoom', (req, res) => {
+app.get('/createMeetUrl', (req, res) => {
   res.send({ success: true, data: shortid.generate() });
 });
 
