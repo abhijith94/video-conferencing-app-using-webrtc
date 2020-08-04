@@ -10,7 +10,7 @@ class Home extends Component {
     meetUrl: '', //left side
     urlCopied: false,
     showCopyUrlSection: false,
-    username: '',
+    username: localStorage.getItem('username') || '',
   };
 
   createMeetingBtnHandler = async () => {
