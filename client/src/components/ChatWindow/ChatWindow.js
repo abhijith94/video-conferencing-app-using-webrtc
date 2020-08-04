@@ -32,49 +32,23 @@ class ChatWindow extends Component {
       <div className="Peer" style={{ ...style }}>
         <video autoPlay ref={this.videoRef} className="video-element"></video>
 
-        {this.props.localPeerId !== this.props.peerId ? (
-          <div className="user-mute">
-            {!this.props.mute ? (
-              <Button
-                shape="circle"
-                icon={<i className="fas fa-microphone"></i>}
-                size={'large'}
-                className="microphone"
-                onClick={() => this.props.remoteAudioToggle(this.props.peerId)}
-              ></Button>
-            ) : (
-              <Button
-                shape="circle"
-                icon={<i className="fas fa-microphone-slash"></i>}
-                size={'large'}
-                className="microphone"
-                onClick={() => this.props.remoteAudioToggle(this.props.peerId)}
-              />
-            )}
-          </div>
-        ) : null}
-
-        {this.props.localPeerId === this.props.peerId ? (
-          <div className="user-mute">
-            {!this.props.mute ? (
-              <Button
-                shape="circle"
-                icon={<i className="fas fa-microphone"></i>}
-                size={'large'}
-                className="microphone"
-                style={{ pointerEvents: 'none' }}
-              ></Button>
-            ) : (
-              <Button
-                shape="circle"
-                icon={<i className="fas fa-microphone-slash"></i>}
-                size={'large'}
-                className="microphone"
-                style={{ pointerEvents: 'none' }}
-              />
-            )}
-          </div>
-        ) : null}
+        <div className="user-mute">
+          <Button
+            shape="circle"
+            icon={
+              <i
+                className={`${
+                  this.props.mute
+                    ? 'fas fa-microphone-slash'
+                    : 'fas fa-microphone'
+                }`}
+              ></i>
+            }
+            size={'large'}
+            className="microphone"
+            style={{ pointerEvents: 'none' }}
+          ></Button>
+        </div>
 
         {!this.props.video ? (
           <div className="video-disabled">

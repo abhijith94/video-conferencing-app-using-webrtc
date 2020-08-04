@@ -19,6 +19,18 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('peer-mute', (data) => {
+    if (data && room_id) {
+      socket.to(room_id).emit('peer-mute', data);
+    }
+  });
+
+  socket.on('peer-video', (data) => {
+    if (data && room_id) {
+      socket.to(room_id).emit('peer-video', data);
+    }
+  });
+
   socket.on('disconnect', () => {
     io.to(room_id).emit('peer-disconnected', { peerId: peer_id });
   });

@@ -46,83 +46,112 @@ class Chat extends Component {
             stream,
           });
 
-          this.setState(
-            {
-              peers,
-              chatContainerStyle: this.generateChatContainerStyles(
-                peers.length
-              ),
-            },
-            () => {
-              this.remoteAudioToggle(peerId, 0); //add due bug where remote stream is not visible unless state updated again
-            }
-          );
+          this.setState({
+            peers,
+            chatContainerStyle: this.generateChatContainerStyles(peers.length),
+          });
         });
       }
     });
 
     this.socket.on('peer-disconnected', ({ peerId }) => {
-      let peers = this.state.peers.filter((peer) => peer.peerId !== peerId);
+      let peers = [...this.state.peers];
+      peers = peers.filter((peer) => peer.peerId !== peerId);
 
       this.setState({
         peers,
         chatContainerStyle: this.generateChatContainerStyles(peers.length),
       });
     });
+
+    this.socket.on('peer-mute', ({ peerId, muteState }) => {
+      this.remoteAudioToggle(peerId, muteState);
+    });
+
+    this.socket.on('peer-video', ({ peerId, videoState }) => {
+      this.remoteVideoToggle(peerId, videoState);
+    });
   }
 
   userVideoToggle = () => {
-    this.setState((prevState) => {
-      let peers = [];
+    this.setState(
+      (prevState) => {
+        let peers = [...prevState.peers];
 
-      peers = prevState.peers.map((peer) => {
-        if (peer.peerId === this.state.localPeerId) {
-          if (peer.stream) {
-            if (prevState.userVideo) {
-              peer.stream.getTracks().forEach((track) => {
-                track.enabled = false;
-              });
-            } else {
-              peer.stream.getTracks().forEach((track) => {
-                track.enabled = true;
-              });
+        peers = peers.map((peer) => {
+          if (peer.peerId === this.state.localPeerId) {
+            if (peer.stream) {
+              if (prevState.userVideo) {
+                peer.stream.getTracks().forEach((track) => {
+                  track.enabled = false;
+                });
+              } else {
+                peer.stream.getTracks().forEach((track) => {
+                  track.enabled = true;
+                });
+              }
+              peer.video = !prevState.userVideo;
             }
-            peer.video = !prevState.userVideo;
           }
-        }
-        return peer;
-      });
+          return peer;
+        });
 
-      return { userVideo: !prevState.userVideo, peers };
-    });
+        return { userVideo: !prevState.userVideo, peers };
+      },
+      () =>
+        this.socket.emit('peer-video', {
+          peerId: this.state.localPeerId,
+          videoState: this.state.userVideo,
+        })
+    );
   };
 
-  userAudioMuteToggle = () => {
-    this.setState((prevState) => {
-      let peers = [];
-
-      peers = prevState.peers.map((peer) => {
-        if (peer.peerId === this.state.localPeerId) {
-          if (peer.stream) {
-            peer.stream.muted = !prevState.userAudioMute;
-          }
-          peer.mute = !prevState.userAudioMute;
-        }
-        return peer;
-      });
-
-      return { userAudioMute: !prevState.userAudioMute, peers };
-    });
-  };
-
-  remoteAudioToggle = (peerId, status = null) => {
+  remoteVideoToggle = (peerId, videoState) => {
     let peers = [...this.state.peers];
     peers = peers.map((peer) => {
       if (peer.peerId === peerId) {
-        peer.mute = status === null ? !peer.mute : status;
+        peer.video = videoState;
       }
       return peer;
     });
+
+    this.setState({ peers });
+  };
+
+  userAudioMuteToggle = () => {
+    this.setState(
+      (prevState) => {
+        let peers = [...prevState.peers];
+
+        peers = peers.map((peer) => {
+          if (peer.peerId === this.state.localPeerId) {
+            if (peer.stream) {
+              peer.stream.muted = !prevState.userAudioMute;
+            }
+            peer.mute = !prevState.userAudioMute;
+          }
+          return peer;
+        });
+
+        return { userAudioMute: !prevState.userAudioMute, peers };
+      },
+      () =>
+        this.socket.emit('peer-mute', {
+          peerId: this.state.localPeerId,
+          muteState: this.state.userAudioMute,
+        })
+    );
+  };
+
+  remoteAudioToggle = (peerId, muteState) => {
+    let peers = [...this.state.peers];
+    peers = peers.map((peer) => {
+      if (peer.peerId === peerId) {
+        peer.mute = muteState;
+      }
+      return peer;
+    });
+
     this.setState({ peers });
   };
 
@@ -281,9 +310,12 @@ class Chat extends Component {
 
         peerjs.on('error', function (err) {
           console.log('Error: ', err);
+          message.error('Somthing went wrong!');
+          setTimeout(() => this.props.history.push('/'), 2000);
         });
       } catch (error) {
         message.error('Somthing went wrong!');
+        setTimeout(() => this.props.history.push('/'), 2000);
       } finally {
         this.setState({ initializing: false });
       }
@@ -316,32 +348,28 @@ class Chat extends Component {
                 {...peer}
                 localPeerId={localPeerId}
                 key={peer.peerId}
-                remoteAudioToggle={this.remoteAudioToggle}
               ></ChatWindow>
             ))}
           </Col>
           <Col span={24} className="user-controls">
             <Row justify="center" align="middle">
               <Col className="user-audio">
-                {userAudioMute ? (
-                  <Button
-                    type="primary"
-                    shape="circle"
-                    icon={<i className="fas fa-microphone-slash"></i>}
-                    size={'large'}
-                    className="microphone"
-                    onClick={this.userAudioMuteToggle}
-                  />
-                ) : (
-                  <Button
-                    type="primary"
-                    shape="circle"
-                    icon={<i className="fas fa-microphone"></i>}
-                    size={'large'}
-                    className="microphone"
-                    onClick={this.userAudioMuteToggle}
-                  ></Button>
-                )}
+                <Button
+                  type="primary"
+                  shape="circle"
+                  icon={
+                    <i
+                      className={`${
+                        userAudioMute
+                          ? 'fas fa-microphone-slash'
+                          : 'fas fa-microphone'
+                      }`}
+                    ></i>
+                  }
+                  size={'large'}
+                  className="microphone"
+                  onClick={this.userAudioMuteToggle}
+                />
               </Col>
               <Col className="user-hang-up">
                 <Button
@@ -355,25 +383,20 @@ class Chat extends Component {
                 ></Button>
               </Col>
               <Col className="user-video">
-                {userVideo ? (
-                  <Button
-                    type="primary"
-                    shape="circle"
-                    icon={<i className="fas fa-video"></i>}
-                    size={'large'}
-                    className="video"
-                    onClick={this.userVideoToggle}
-                  ></Button>
-                ) : (
-                  <Button
-                    type="primary"
-                    shape="circle"
-                    icon={<i className="fas fa-video-slash"></i>}
-                    size={'large'}
-                    className="video"
-                    onClick={this.userVideoToggle}
-                  />
-                )}
+                <Button
+                  type="primary"
+                  shape="circle"
+                  icon={
+                    <i
+                      className={`${
+                        userVideo ? 'fas fa-video' : 'fas fa-video-slash'
+                      }`}
+                    ></i>
+                  }
+                  size={'large'}
+                  className="video"
+                  onClick={this.userVideoToggle}
+                ></Button>
               </Col>
             </Row>
           </Col>
