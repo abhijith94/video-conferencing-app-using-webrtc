@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
-import { Row, Col, Button, Spin, message } from 'antd';
+import { Row, Col, Button, Spin, message, Input } from 'antd';
+import Modal from 'antd/lib/modal/Modal';
 import ChatWindow from '../ChatWindow/ChatWindow';
 import Socket from '../../lib/socket';
 import Peer from 'peerjs';
@@ -14,6 +15,9 @@ class Chat extends Component {
     localPeerId: null,
     chatContainerStyle: {},
     initializing: true,
+    interval: null,
+    modalVisible: false,
+    username: '',
   };
 
   constructor() {
@@ -46,10 +50,15 @@ class Chat extends Component {
             stream,
           });
 
-          this.setState({
-            peers,
-            chatContainerStyle: this.generateChatContainerStyles(peers.length),
-          });
+          this.setState(
+            {
+              peers,
+              chatContainerStyle: this.generateChatContainerStyles(
+                peers.length
+              ),
+            },
+            () => this.sendUsernameToPeers()
+          );
         });
       }
     });
@@ -70,6 +79,25 @@ class Chat extends Component {
 
     this.socket.on('peer-video', ({ peerId, videoState }) => {
       this.remoteVideoToggle(peerId, videoState);
+    });
+
+    this.socket.on('share-username', ({ peerId, username }) => {
+      let peers = [...this.state.peers];
+      let changed = false;
+
+      peers = peers.map((peer) => {
+        if (peer.peerId === peerId) {
+          if (peer.name !== username) {
+            peer.name = username;
+            changed = true;
+          }
+        }
+        return peer;
+      });
+
+      if (changed) {
+        this.setState({ peers });
+      }
     });
   }
 
@@ -276,6 +304,7 @@ class Chat extends Component {
             video: true,
             stream,
             peerjs,
+            name: localStorage.getItem('username') || '',
           };
 
           peer.peerjs.on('call', (call) => {
@@ -291,12 +320,15 @@ class Chat extends Component {
                 stream,
               });
 
-              this.setState({
-                peers,
-                chatContainerStyle: this.generateChatContainerStyles(
-                  peers.length
-                ),
-              });
+              this.setState(
+                {
+                  peers,
+                  chatContainerStyle: this.generateChatContainerStyles(
+                    peers.length
+                  ),
+                },
+                () => this.sendUsernameToPeers()
+              );
             });
           });
 
@@ -322,13 +354,33 @@ class Chat extends Component {
     }
   };
 
+  sendUsernameToPeers = () => {
+    this.setState({
+      interval: setInterval(() => {
+        let peerId = this.state.localPeerId;
+        let username = localStorage.getItem('username');
+
+        if (peerId && username) {
+          this.socket.emit('share-username', {
+            peerId,
+            username,
+          });
+        }
+      }, 3000),
+    });
+  };
+
   componentDidMount() {
     this.socket.on('connect', async () => {
-      let style = this.generateChatContainerStyles();
+      if (localStorage.getItem('username')) {
+        let style = this.generateChatContainerStyles();
 
-      this.setState({ chatContainerStyle: style }, () => {
-        this.setupLocalUserStream();
-      });
+        this.setState({ chatContainerStyle: style }, () => {
+          this.setupLocalUserStream();
+        });
+      } else {
+        this.setState({ modalVisible: true });
+      }
     });
   }
 
@@ -406,8 +458,51 @@ class Chat extends Component {
             <Spin size="large" />
           </div>
         ) : null}
+
+        <Modal
+          title="Please enter a friendly name"
+          centered
+          visible={this.state.modalVisible}
+          onOk={() => {
+            console.log(this.state.username);
+            if (this.state.username.trim() !== '') {
+              localStorage.setItem('username', this.state.username);
+              let style = this.generateChatContainerStyles();
+
+              this.setState(
+                { chatContainerStyle: style, modalVisible: false },
+                () => {
+                  this.setupLocalUserStream();
+                }
+              );
+            } else {
+              message.error('Please enter a friendly name!');
+            }
+          }}
+          onCancel={() => {
+            this.setState({ modalVisible: false }, () => {
+              this.props.history.push('/');
+            });
+          }}
+        >
+          <Input
+            type="text"
+            placeholder="Friendly name..."
+            value={this.state.username}
+            onChange={(e) => {
+              let username = e.target.value;
+              this.setState({ username });
+            }}
+          />
+        </Modal>
       </div>
     );
+  }
+
+  componentWillUnmount() {
+    if (this.state.interval) {
+      clearInterval(this.state.interval);
+    }
   }
 }
 

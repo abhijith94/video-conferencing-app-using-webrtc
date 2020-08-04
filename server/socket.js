@@ -31,6 +31,12 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('share-username', (data) => {
+    if (data && room_id) {
+      socket.to(room_id).emit('share-username', data);
+    }
+  });
+
   socket.on('disconnect', () => {
     io.to(room_id).emit('peer-disconnected', { peerId: peer_id });
   });

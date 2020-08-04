@@ -48,6 +48,7 @@ class ChatWindow extends Component {
             className="microphone"
             style={{ pointerEvents: 'none' }}
           ></Button>
+          <span className="uname">{this.props.name}</span>
         </div>
 
         {!this.props.video ? (

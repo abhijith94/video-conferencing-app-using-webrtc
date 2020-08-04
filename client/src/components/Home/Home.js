@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Row, Col, Button, Input } from 'antd';
+import { Row, Col, Button, Input, message } from 'antd';
 import { FETCH_MEET_URL, MEET_BASE_URL } from '../../config';
 import axios from 'axios';
 import './Home.scss';
@@ -10,6 +10,7 @@ class Home extends Component {
     meetUrl: '', //left side
     urlCopied: false,
     showCopyUrlSection: false,
+    username: '',
   };
 
   createMeetingBtnHandler = async () => {
@@ -37,6 +38,15 @@ class Home extends Component {
   };
 
   joinMeetingHandler = () => {
+    if (this.state.joinUrl.trim() === '') {
+      message.warning('Please paste the url!');
+      return;
+    }
+    if (this.state.username.trim() === '') {
+      message.warning('Please enter a name!');
+      return;
+    }
+
     this.props.history.push(this.state.joinUrl.split('/')[3]);
   };
 
@@ -94,10 +104,23 @@ class Home extends Component {
                 Paste the link below to join the meeting.
               </div>
               <Row justify="center" className="meeting-url-join-container">
+                <Col span={5} className="username">
+                  <Input
+                    type="text"
+                    placeholder="Friendly name..."
+                    value={this.state.username}
+                    onChange={(e) => {
+                      let username = e.target.value;
+                      this.setState({ username }, () => {
+                        localStorage.setItem('username', username);
+                      });
+                    }}
+                  />
+                </Col>
                 <Col span={10} className="url">
                   <Input
                     type="text"
-                    placeholder="paste url here..."
+                    placeholder="Paste url here..."
                     value={this.state.joinUrl}
                     onChange={this.joinUrlChangedHandler}
                   />

@@ -88,6 +88,15 @@
       .meeting-url-join-container {
         padding: 30px 0;
 
+        .username {
+          margin-right: 10px;
+          input {
+            height: 100%;
+            font-size: 1.4rem;
+            color: #78909c;
+          }
+        }
+
         .url {
           background-color: #eceff1;
 
