@@ -1,8 +1,20 @@
 .home {
   height: 100vh;
+  position: relative;
 
   .create-video-chat {
     height: 100%;
+    position: relative;
+
+    .header-left {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 3rem;
+      color: #1565c0;
+      z-index: 10001;
+      font-weight: bold;
+    }
 
     .create-meeting-container {
       height: 100%;
@@ -75,6 +87,17 @@
   .start-video-chat {
     background-color: #1565c0;
     height: 100%;
+    position: relative;
+
+    .header-right {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 3rem;
+      color: white;
+      z-index: 10001;
+      font-weight: bold;
+    }
 
     .join-meeting-container {
       height: 100%;
@@ -122,6 +145,25 @@
           }
         }
       }
+    }
+  }
+
+  .footer {
+    position: absolute;
+    padding: 10px 0;
+    bottom: 0;
+    left: 1%;
+
+    i {
+      font-size: 2rem;
+      margin-right: 5px;
+    }
+
+    a {
+      color: rgb(43, 43, 43);
+      font-size: 1.2rem;
+      vertical-align: text-bottom;
+      text-decoration: underline;
     }
   }
 }

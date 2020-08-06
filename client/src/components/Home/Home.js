@@ -60,6 +60,7 @@ class Home extends Component {
     return (
       <Row className="home">
         <Col span={12} className="create-video-chat">
+          <div className="header-left">Conference</div>
           <Row align="middle" className="create-meeting-container">
             <Col span={24} style={{ textAlign: 'center' }}>
               <div className="title">
@@ -98,6 +99,7 @@ class Home extends Component {
           </Row>
         </Col>
         <Col span={12} className="start-video-chat">
+          <div className="header-right">Call App</div>
           <Row align="middle" className="join-meeting-container">
             <Col span={24} style={{ textAlign: 'center' }}>
               <div className="title">
@@ -134,6 +136,15 @@ class Home extends Component {
             </Col>
           </Row>
         </Col>
+        <div className="footer">
+          <i className="fab fa-github"></i>
+          <a
+            href="https://github.com/abhijith94/video-conferencing-app-using-webrtc"
+            target="_blank"
+          >
+            code
+          </a>
+        </div>
       </Row>
     );
   }

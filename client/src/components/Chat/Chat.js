@@ -39,38 +39,62 @@ class Chat extends Component {
       if (peerjs && localStream) {
         var call = peerjs.call(peerId, localStream); //call the remote peer
 
-        //when remote peer sends back the stream
+        //when remote peer sends back the stream.
+        //NOTE: this is called twice if both audio & video is set to true in getUserMedia. if-else block handles this issue in call.on('stream') below
         call.on('stream', async (stream) => {
           let peers = [...this.state.peers];
 
-          peers.push({
-            peerId,
-            mute: false,
-            video: true,
-            stream,
-          });
+          if (peers.find((peer) => peer.peerId === peerId)) {
+            peers = peers.map((peer) => {
+              if (peer.peerId === peerId) {
+                peer.stream = stream;
+              }
+              return peer;
+            });
 
-          this.setState(
-            {
+            this.setState({
               peers,
-              chatContainerStyle: this.generateChatContainerStyles(
-                peers.length
-              ),
-            },
-            () => this.sendUsernameToPeers()
-          );
+            });
+          } else {
+            peers.push({
+              peerId,
+              mute: false,
+              video: true,
+              stream,
+            });
+
+            this.setState(
+              {
+                peers,
+                chatContainerStyle: this.generateChatContainerStyles(
+                  peers.length
+                ),
+              },
+              () => this.sendUsernameToPeers()
+            );
+          }
         });
       }
     });
 
     this.socket.on('peer-disconnected', ({ peerId }) => {
       let peers = [...this.state.peers];
+
+      let peerToBeRemoved = peers.find((peer) => peer.peerId === peerId);
+
       peers = peers.filter((peer) => peer.peerId !== peerId);
 
-      this.setState({
-        peers,
-        chatContainerStyle: this.generateChatContainerStyles(peers.length),
-      });
+      this.setState(
+        {
+          peers,
+          chatContainerStyle: this.generateChatContainerStyles(peers.length),
+        },
+        () => {
+          if (peerToBeRemoved) {
+            message.info(`${peerToBeRemoved.name} left`);
+          }
+        }
+      );
     });
 
     this.socket.on('peer-mute', ({ peerId, muteState }) => {
@@ -96,7 +120,9 @@ class Chat extends Component {
       });
 
       if (changed) {
-        this.setState({ peers });
+        this.setState({ peers }, () => {
+          message.info(`${username} joined`);
+        });
       }
     });
   }
@@ -292,7 +318,7 @@ class Chat extends Component {
       try {
         let stream = await navigator.mediaDevices.getUserMedia({
           video: true,
-          //audio: true,
+          audio: true,
         });
 
         const peerjs = new Peer();
@@ -313,22 +339,35 @@ class Chat extends Component {
             call.on('stream', (stream) => {
               let peers = [...this.state.peers];
 
-              peers.push({
-                peerId: call.peer,
-                mute: false,
-                video: true,
-                stream,
-              });
+              if (peers.find((peer) => peer.peerId === call.peer)) {
+                peers = peers.map((peer) => {
+                  if (peer.peerId === call.peer) {
+                    peer.stream = stream;
+                  }
+                  return peer;
+                });
 
-              this.setState(
-                {
+                this.setState({
                   peers,
-                  chatContainerStyle: this.generateChatContainerStyles(
-                    peers.length
-                  ),
-                },
-                () => this.sendUsernameToPeers()
-              );
+                });
+              } else {
+                peers.push({
+                  peerId: call.peer,
+                  mute: false,
+                  video: true,
+                  stream,
+                });
+
+                this.setState(
+                  {
+                    peers,
+                    chatContainerStyle: this.generateChatContainerStyles(
+                      peers.length
+                    ),
+                  },
+                  () => this.sendUsernameToPeers()
+                );
+              }
             });
           });
 
@@ -366,7 +405,7 @@ class Chat extends Component {
             username,
           });
         }
-      }, 3000),
+      }, 2000),
     });
   };
 
