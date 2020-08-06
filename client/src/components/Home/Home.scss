@@ -165,3 +165,10 @@
     }
   }
 }
+
+@media only screen and (max-width: 1366px) {
+  .home .create-video-chat .title,
+  .home .start-video-chat .title {
+    font-size: 2rem !important;
+  }
+}

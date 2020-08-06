@@ -385,7 +385,7 @@ class Chat extends Component {
           setTimeout(() => this.props.history.push('/'), 2000);
         });
       } catch (error) {
-        message.error('Somthing went wrong!');
+        message.error(error.message);
         setTimeout(() => this.props.history.push('/'), 2000);
       } finally {
         this.setState({ initializing: false });

@@ -141,6 +141,7 @@ class Home extends Component {
           <a
             href="https://github.com/abhijith94/video-conferencing-app-using-webrtc"
             target="_blank"
+            rel="noopener noreferrer"
           >
             code
           </a>
