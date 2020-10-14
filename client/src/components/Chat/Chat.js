@@ -181,7 +181,7 @@ class Chat extends Component {
         peers = peers.map((peer) => {
           if (peer.peerId === this.state.localPeerId) {
             if (peer.stream) {
-              peer.stream.muted = !prevState.userAudioMute;
+              peer.stream.getAudioTracks()[0].enabled = prevState.userAudioMute;
             }
             peer.mute = !prevState.userAudioMute;
           }
@@ -322,11 +322,21 @@ class Chat extends Component {
           audio: true,
         });
 
-        const peerjs = new Peer(new Date().valueOf(), {
-          host: PEERJS_URL,
-          secure: true,
-          path: '/',
-        });
+        let peerjs = null;
+        if (PEERJS_URL.includes('localhost')) {
+          peerjs = new Peer(new Date().valueOf(), {
+            host: PEERJS_URL,
+            port: 3003,
+            secure: false,
+            path: '/',
+          });
+        } else {
+          peerjs = new Peer(new Date().valueOf(), {
+            host: PEERJS_URL,
+            secure: true,
+            path: '/',
+          });
+        }
 
         peerjs.on('open', (id) => {
           let peer = {
@@ -387,11 +397,19 @@ class Chat extends Component {
         peerjs.on('error', function (err) {
           console.log('Error: ', err);
           message.error('Somthing went wrong!');
-          setTimeout(() => this.props.history.push('/'), 2000);
+          setTimeout(() => {
+            if (this.props && this.props.history) {
+              this.props.history.push('/');
+            }
+          }, 2000);
         });
       } catch (error) {
         message.error(error.message);
-        setTimeout(() => this.props.history.push('/'), 2000);
+        setTimeout(() => {
+          if (this.props && this.props.history) {
+            this.props.history.push('/');
+          }
+        }, 2000);
       } finally {
         this.setState({ initializing: false });
       }

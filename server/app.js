@@ -20,5 +20,9 @@ app.get('/createMeetUrl', (req, res) => {
 app.listen(3001, () => {
   console.log('server is running on port 3001');
   require('./socket');
-  const peerServer = PeerServer({ port: 3003, path: '/', ssl: true });
+  const peerServer = PeerServer({
+    port: 3003,
+    path: '/',
+    ssl: process.env.NODE_ENV == 'development' ? false : true,
+  });
 });
