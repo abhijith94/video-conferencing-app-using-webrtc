@@ -3,6 +3,9 @@ export const SERVER_URL =
     ? 'http://localhost:3001'
     : 'https://abhijith.xyz/api';
 
+export const PEERJS_URL =
+  process.env.NODE_ENV === 'development' ? 'localhost' : 'abhijith.xyz';
+
 export const SOCKET_URL =
   process.env.NODE_ENV === 'development'
     ? 'http://localhost:3002'

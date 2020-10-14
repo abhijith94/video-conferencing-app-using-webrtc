@@ -1,6 +1,7 @@
 const express = require('express');
 const shortid = require('shortid');
 const cors = require('cors');
+const { PeerServer } = require('peer');
 
 const app = express();
 
@@ -19,4 +20,5 @@ app.get('/createMeetUrl', (req, res) => {
 app.listen(3001, () => {
   console.log('server is running on port 3001');
   require('./socket');
+  const peerServer = PeerServer({ port: 9000, path: '/myapp' });
 });
