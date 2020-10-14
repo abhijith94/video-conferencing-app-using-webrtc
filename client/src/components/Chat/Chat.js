@@ -328,7 +328,7 @@ class Chat extends Component {
 
         const peerjs = new Peer(shortid.generate(), {
           host: PEERJS_URL,
-          port: 9000,
+          port: 8080,
           path: '/myapp',
         });
 
