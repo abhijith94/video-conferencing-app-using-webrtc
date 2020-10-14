@@ -324,7 +324,7 @@ class Chat extends Component {
 
         const peerjs = new Peer(new Date().valueOf(), {
           host: PEERJS_URL,
-          port: 8080,
+          secure: true,
           path: '/',
         });
 
