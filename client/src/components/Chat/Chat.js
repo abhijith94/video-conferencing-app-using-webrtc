@@ -4,7 +4,6 @@ import Modal from 'antd/lib/modal/Modal';
 import ChatWindow from '../ChatWindow/ChatWindow';
 import Socket from '../../lib/socket';
 import Peer from 'peerjs';
-import shortid from 'shortid';
 import { PEERJS_URL } from '../../config';
 
 import './Chat.scss';
@@ -24,9 +23,6 @@ class Chat extends Component {
 
   constructor() {
     super();
-    shortid.characters(
-      '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ()'
-    );
 
     let socketInstance = new Socket();
     this.socket = socketInstance.socket;
@@ -326,10 +322,10 @@ class Chat extends Component {
           audio: true,
         });
 
-        const peerjs = new Peer(shortid.generate(), {
+        const peerjs = new Peer(new Date().valueOf(), {
           host: PEERJS_URL,
           port: 8080,
-          path: '/myapp',
+          path: '/',
         });
 
         peerjs.on('open', (id) => {
